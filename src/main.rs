@@ -10,13 +10,17 @@ fn create_overlay() -> Result<()> {
     nix::sched::unshare(nix::sched::CloneFlags::CLONE_NEWNS)
         .context("Failed to enter a new Linux namespace")?;
 
-    let whoami = nix::unistd::Uid::current();
-    if !dbg!(whoami).is_root() {
+    let whoami = dbg!(nix::unistd::Uid::current());
+    if !whoami.is_root() {
         // only needed in case of doing a execve in order to preserve caps
-        let uid = nix::unistd::Uid::from_raw(0u32);
-        nix::unistd::setuid(uid)
-            .context("Failed to setuid after calling unshare to preserve caps")?;
+        // let uid = nix::unistd::Uid::from_raw(0u32);
+        // nix::unistd::setuid(uid)
+        //     .context("Failed to setuid after calling unshare to preserve caps")?;
     }
+
+    let lowerdir = PathBuf::from("/tmp/lower");
+    let _ = fs::remove_dir_all(&lowerdir);
+    fs::create_dir(&lowerdir).context("Failed to create overlay base")?;
 
     let dest = PathBuf::from("/tmp/ovrly");
     let _ = fs::remove_dir_all(&dest);
@@ -45,7 +49,7 @@ fn create_overlay() -> Result<()> {
     .context("Failed to turn / into a slave")?;
 
     Overlay::writable(
-        iter::once(dest.as_path()),
+        iter::once(lowerdir.as_path()),
         upper_dir,
         work_dir,
         &target_dir,
