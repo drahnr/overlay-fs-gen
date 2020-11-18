@@ -50,8 +50,7 @@ fn create_overlay() -> Result<()> {
         work_dir,
         &target_dir,
     )
-    .mount()
-    .context("Failed to mount overlay FS")?;
+    .mount()?;
 
     Ok(())
 }
