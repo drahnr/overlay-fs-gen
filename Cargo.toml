@@ -1,0 +1,13 @@
+[package]
+name = "overlay-fs-gen"
+version = "0.1.0"
+authors = ["Bernhard Schuster <bernhard@ahoi.io>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+color-eyre = "0.5"
+nix = "0.19"
+libmount = "0.1"
+fs-err = "2"
