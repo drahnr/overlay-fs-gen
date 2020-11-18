@@ -11,3 +11,6 @@ color-eyre = "0.5"
 nix = "0.19"
 libmount = "0.1"
 fs-err = "2"
+
+[patch.crates-io]
+libmount = { git = "https://github.com/drahnr/libmount" }
