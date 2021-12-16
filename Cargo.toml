@@ -11,6 +11,7 @@ color-eyre = "0.5"
 nix = "0.19"
 libmount = "0.1"
 fs-err = "2"
+tempdir = "0.3"
 
 [patch.crates-io]
 libmount = { git = "https://github.com/drahnr/libmount" }
