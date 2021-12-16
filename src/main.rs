@@ -3,32 +3,32 @@ use color_eyre::Result;
 use fs_err as fs;
 use libmount::Overlay;
 use std::iter;
-use std::path::PathBuf;
 
 /// Replace `sccache-dist` procedure of creating a overlay
 fn create_overlay() -> Result<()> {
+    let uid = nix::unistd::Uid::current();
+    let gid = nix::unistd::Gid::current();
+
+    let tmp = tempdir::TempDir::new("overlay-fs-gen")?;
+    let dest = tempdir::TempDir::new("overlay-fs-gen")?;
+
+    nix::sched::unshare(nix::sched::CloneFlags::CLONE_NEWUSER)
+        .context("Failed to enter a new user namespace")?;
+
     nix::sched::unshare(nix::sched::CloneFlags::CLONE_NEWNS)
         .context("Failed to enter a new Linux namespace")?;
 
-    let whoami = dbg!(nix::unistd::Uid::current());
-    if !whoami.is_root() {
-        // only needed in case of doing a execve in order to preserve caps
-        // let uid = nix::unistd::Uid::from_raw(0u32);
-        // nix::unistd::setuid(uid)
-        //     .context("Failed to setuid after calling unshare to preserve caps")?;
-    }
+    // Equivalent of `unshare --map-current-user`
+    std::fs::write("/proc/self/uid_map", format!("{} {} 1", uid, uid))?;
+    std::fs::write("/proc/self/setgroups", "deny")?;
+    std::fs::write("/proc/self/gid_map", format!("{} {} 1", gid, gid))?;
 
-    let lowerdir = PathBuf::from("/tmp/lower");
-    let _ = fs::remove_dir_all(&lowerdir);
+    let lowerdir = tmp.path().join("lower");
     fs::create_dir(&lowerdir).context("Failed to create overlay base")?;
 
-    let dest = PathBuf::from("/tmp/ovrly");
-    let _ = fs::remove_dir_all(&dest);
-    fs::create_dir(&dest).context("Failed to create overlay base")?;
-
-    let work_dir = dest.join("work");
-    let upper_dir = dest.join("upper");
-    let target_dir = dest.join("target");
+    let work_dir = dest.path().join("work");
+    let upper_dir = dest.path().join("upper");
+    let target_dir = dest.path().join("target");
     fs::create_dir(&work_dir).context("Failed to create overlay work directory")?;
     fs::create_dir(&upper_dir).context("Failed to create overlay upper directory")?;
     fs::create_dir(&target_dir).context("Failed to create overlay target directory")?;
